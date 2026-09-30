@@ -3,7 +3,7 @@
 
 - Bibliothèque standard uniquement.
 - Fichier : data/parkings.csv  (une ligne par parking et par relevé)
-- Première colonne : collected_at (heure UTC de la collecte).
+- Première colonne : collected_at (heure de Paris, avec décalage +01:00/+02:00).
 - Si les données sont identiques au dernier relevé, rien n'est ajouté.
 - Si l'API ajoute un nouveau champ, le fichier est réécrit avec la colonne en plus.
 - Code de sortie non nul en cas d'échec (le run GitHub passe en erreur).
@@ -14,7 +14,8 @@ import sys
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 DATASET = "export-api-parking-citedia"
@@ -22,6 +23,7 @@ BASE = f"https://data.rennesmetropole.fr/api/explore/v2.1/catalog/datasets/{DATA
 PAGE_SIZE = 100
 CSV_PATH = Path("data/parkings.csv")
 TS = "collected_at"
+TZ = ZoneInfo("Europe/Paris")
 
 
 def get_json(url, tries=4):
@@ -133,7 +135,7 @@ def main():
             print("Données inchangées, rien à écrire.")
             return 0
 
-    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    now = datetime.now(TZ).isoformat(timespec="seconds")
     new_file = not CSV_PATH.exists() or CSV_PATH.stat().st_size == 0
     with CSV_PATH.open("a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=header, restval="", lineterminator="\n")
