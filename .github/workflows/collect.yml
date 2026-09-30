@@ -1,0 +1,34 @@
+name: Collecte parkings Rennes
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # toutes les 10 min (UTC)
+  workflow_dispatch:          # lancement manuel pour tester
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collecte-parkings
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Collecter les données
+        run: python3 collect.py
+
+      - name: Commit et push si nouvelles données
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if ! git diff --cached --quiet; then
+            git commit -m "data: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git pull --rebase
+            git push
+          fi
